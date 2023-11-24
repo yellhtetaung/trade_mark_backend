@@ -1,7 +1,7 @@
-import prisma from "../../database/db.config.mjs";
+import prisma from "../config/db.config.mjs";
 import emailValidator from "email-validator";
 
-export const getAllUsers = async (req, res) => {
+export const getAllHandler = async (req, res) => {
 	try {
 		const { page, pageSize, sortField, sortOrder } = req.query;
 		const skip = Number(page) * Number(pageSize);
@@ -27,7 +27,7 @@ export const getAllUsers = async (req, res) => {
 	}
 };
 
-export const searchUser = async (req, res) => {
+export const searchHandler = async (req, res) => {
 	try {
 		const { page, pageSize, filteredValue, searchField } = req.query;
 		const skip = Number(page) * Number(pageSize);
@@ -65,7 +65,7 @@ export const searchUser = async (req, res) => {
 	}
 };
 
-export const createUser = async (req, res) => {
+export const createHandler = async (req, res) => {
 	try {
 		if (Object.keys(req.body).length === 0) {
 			throw new Error("Content cannot be empty!");
@@ -100,7 +100,7 @@ export const createUser = async (req, res) => {
 	}
 };
 
-export const updateUser = async (req, res) => {
+export const updateHandler = async (req, res) => {
 	try {
 		const id = req.params.id;
 

@@ -50,5 +50,5 @@ model TradeMarkInfo {
   exp_date            DateTime
   reason_exp          String
   tm2                 String
-  submittion_type     String
+  submittion_type     Json
 }

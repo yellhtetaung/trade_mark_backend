@@ -1,15 +1,15 @@
 import { Router } from "express";
 import {
-	getAllUsers,
-	searchUser,
-	createUser,
-	updateUser,
+	getAllHandler,
+	searchHandler,
+	createHandler,
+	updateHandler,
 } from "./users.controller.mjs";
 
 const router = Router();
 
-router.route("/").get(getAllUsers).post(createUser);
-router.route("/:id").put(updateUser);
-router.route("/search").get(searchUser);
+router.route("/").get(getAllHandler).post(createHandler);
+router.route("/:id").put(updateHandler);
+router.route("/search").get(searchHandler);
 
 export default router;
