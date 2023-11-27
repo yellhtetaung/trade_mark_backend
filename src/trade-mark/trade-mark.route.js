@@ -1,10 +1,10 @@
-import { Router } from "express";
-import {
+const { Router } = require("express");
+const {
 	getAllHandler,
-	searchHandler,
 	createHandler,
 	updateHandler,
-} from "./users.controller.mjs";
+	searchHandler,
+} = require("./trade-mark.controller");
 
 const router = Router();
 
@@ -12,4 +12,4 @@ router.route("/").get(getAllHandler).post(createHandler);
 router.route("/:id").put(updateHandler);
 router.route("/search").get(searchHandler);
 
-export default router;
+module.exports = router;

@@ -1,11 +1,11 @@
-import "dotenv/config";
-import express from "express";
-import bodyParser from "body-parser";
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import fileUpload from "express-fileupload";
+require("dotenv/config");
+const express = require("express");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const fileUpload = require("express-fileupload");
 
-import router from "./src/router.mjs";
+const router = require("./src/router");
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -22,4 +22,4 @@ app.use(router);
 
 app.listen(port, () => console.log(`Server is listening on port ${port}`));
 
-export default app;
+module.exports = app;

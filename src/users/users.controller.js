@@ -1,7 +1,7 @@
-import prisma from "../config/db.config.mjs";
-import emailValidator from "email-validator";
+const prisma = require("../config/db.config.js");
+const emailValidator = require("email-validator");
 
-export const getAllHandler = async (req, res) => {
+exports.getAllHandler = async (req, res) => {
 	try {
 		const { page, pageSize, sortField, sortOrder } = req.query;
 		const skip = Number(page) * Number(pageSize);
@@ -27,7 +27,7 @@ export const getAllHandler = async (req, res) => {
 	}
 };
 
-export const searchHandler = async (req, res) => {
+exports.searchHandler = async (req, res) => {
 	try {
 		const { page, pageSize, filteredValue, searchField } = req.query;
 		const skip = Number(page) * Number(pageSize);
@@ -65,7 +65,7 @@ export const searchHandler = async (req, res) => {
 	}
 };
 
-export const createHandler = async (req, res) => {
+exports.createHandler = async (req, res) => {
 	try {
 		if (Object.keys(req.body).length === 0) {
 			throw new Error("Content cannot be empty!");
@@ -100,7 +100,7 @@ export const createHandler = async (req, res) => {
 	}
 };
 
-export const updateHandler = async (req, res) => {
+exports.updateHandler = async (req, res) => {
 	try {
 		const id = req.params.id;
 

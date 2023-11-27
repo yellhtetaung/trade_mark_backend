@@ -1,11 +1,8 @@
-import prisma from "../config/db.config.mjs";
-import { fileURLToPath } from "url";
-import path, { dirname } from "path";
-import fs from "fs";
+const prisma = require("../config/db.config");
+const fs = require("fs");
+const path = require("path");
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-export const getAllHandler = async (req, res) => {
+exports.getAllHandler = async (req, res) => {
 	try {
 		const { page, pageSize } = req.query;
 		const skip = Number(page) * Number(pageSize);
@@ -28,7 +25,7 @@ export const getAllHandler = async (req, res) => {
 	}
 };
 
-export const searchHandler = async (req, res) => {
+exports.searchHandler = async (req, res) => {
 	try {
 		const { page, pageSize, filteredValue, searchField } = req.query;
 		const skip = Number(page) * Number(pageSize);
@@ -64,7 +61,7 @@ export const searchHandler = async (req, res) => {
 	}
 };
 
-export const createHandler = async (req, res) => {
+exports.createHandler = async (req, res) => {
 	let fileName;
 
 	try {
@@ -72,7 +69,7 @@ export const createHandler = async (req, res) => {
 			throw new Error("No file uploaded");
 		}
 
-		if (Object.keys(req.body).length === 0) {
+		if (Object.keys(req.body).length === 0 || !req.body) {
 			throw new Error("Content cannot be empty!");
 		}
 
@@ -118,7 +115,7 @@ export const createHandler = async (req, res) => {
 						Mark: req.body["submittion_type[Mark]"] === "true" && true,
 						OldMark: req.body["submittion_type[OldMark]"] === "true" && true,
 						ReRegistration:
-							req.body['submittion_type["Re-Registration"]'] === "true" && true,
+							req.body["submittion_type[ReRegistration]"] === "true" && true,
 					},
 				};
 
@@ -135,13 +132,15 @@ export const createHandler = async (req, res) => {
 			}
 		);
 	} catch (error) {
-		console.log(fileName);
-		fs.rmSync(path.join(__dirname, "..", "..", "public", fileName));
+		if (error.message !== "No file uploaded") {
+			fs.rmSync(path.join(__dirname, "..", "..", "public", fileName));
+		}
+
 		res.status(500).json({ message: error.message });
 	}
 };
 
-export const updateHandler = async (req, res) => {
+exports.updateHandler = async (req, res) => {
 	try {
 		const id = req.params.id;
 
