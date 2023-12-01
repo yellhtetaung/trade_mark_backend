@@ -32,8 +32,6 @@ exports.searchHandler = async (req, res) => {
 		const { page, pageSize, filteredValue, searchField } = req.query;
 		const skip = Number(page) * Number(pageSize);
 
-		console.log(skip);
-
 		if (filteredValue !== "null") {
 			const [user, totalUsers] = await prisma.$transaction([
 				prisma.user.findMany({
