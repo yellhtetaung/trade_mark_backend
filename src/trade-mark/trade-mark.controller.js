@@ -341,3 +341,51 @@ exports.updateHandler = async (req, res) => {
 		res.status(500).json({ message: error.message });
 	}
 };
+
+exports.deleteHandler = async (req, res) => {
+	try {
+		if (!req.params.id) {
+			throw new Error("Id is required");
+		}
+
+		const existingTradeMark = await prisma.tradeMarkInfo.findUnique({
+			where: { id: Number(req.params.id) },
+		});
+
+		if (!existingTradeMark) {
+			throw new Error("Trade Mark not found");
+		}
+
+		if (
+			fs.existsSync(
+				path.join(
+					__dirname,
+					"..",
+					"..",
+					"public",
+					existingTradeMark.trademark_sample
+				)
+			)
+		) {
+			fs.rmSync(
+				path.join(
+					__dirname,
+					"..",
+					"..",
+					"public",
+					existingTradeMark.trademark_sample
+				)
+			);
+		}
+
+		await prisma.tradeMarkInfo.delete({
+			where: { id: Number(existingTradeMark.id) },
+		});
+
+		res
+			.status(200)
+			.json({ message: "Trade Mark has benn deleted successfully" });
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};

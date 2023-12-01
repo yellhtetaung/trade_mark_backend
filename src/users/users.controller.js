@@ -1,5 +1,6 @@
 const prisma = require("../config/db.config.js");
 const emailValidator = require("email-validator");
+const bcrypt = require("bcrypt");
 
 exports.getAllHandler = async (req, res) => {
 	try {
@@ -81,18 +82,20 @@ exports.createHandler = async (req, res) => {
 			throw new Error("Email already exists");
 		}
 
+		const hashPassword = bcrypt.hashSync(password, 10);
+
 		const user = await prisma.user.create({
 			data: {
 				username,
 				email,
-				password,
+				password: hashPassword,
 				phone_no: phoneNumber,
 				nrc,
 				address,
 			},
 		});
 
-		res.status(201).json({ message: "User created successfully", data: user });
+		res.status(201).json({ message: "User created successfully" });
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
@@ -124,6 +127,28 @@ exports.updateHandler = async (req, res) => {
 		});
 
 		res.status(200).json({ message: "User updated successfully" });
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
+exports.deleteHandler = async (req, res) => {
+	try {
+		if (!req.params.id) {
+			throw new Error("Id is required");
+		}
+
+		const existingUser = await prisma.user.findUnique({
+			where: { id: req.params.id },
+		});
+
+		if (!existingUser) {
+			throw new Error("User not found");
+		}
+
+		await prisma.user.delete({ where: { id: existingUser.id } });
+
+		res.status(200).json({ message: "User deleted successfully" });
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
