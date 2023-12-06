@@ -17,6 +17,7 @@ model User {
   address    String?
   created_at DateTime @default(now())
   active     Boolean  @default(true)
+  role       Role     @default(User)
 }
 
 model TradeMarkInfo {
@@ -49,4 +50,10 @@ model TradeMarkInfo {
   tm2                 String
   created_at          DateTime @db.Date
   submittion_type     Json
+  attachment          String?
+}
+
+enum Role {
+  Admin
+  User
 }
