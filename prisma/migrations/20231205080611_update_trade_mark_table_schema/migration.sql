@@ -43,7 +43,9 @@ CREATE TABLE `TradeMarkInfo` (
     `exp_date` DATETIME(3) NOT NULL,
     `reason_exp` VARCHAR(191) NOT NULL,
     `tm2` VARCHAR(191) NOT NULL,
-    `submittion_type` VARCHAR(191) NOT NULL,
+    `created_at` DATE NOT NULL,
+    `submittion_type` JSON NOT NULL,
+    `attachment` VARCHAR(191) NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,6 +17,7 @@ model User {
   address    String?
   created_at DateTime @default(now())
   active     Boolean  @default(true)
+  role       Role     @default(User)
 }
 
 model TradeMarkInfo {
@@ -50,5 +48,12 @@ model TradeMarkInfo {
   exp_date            DateTime
   reason_exp          String
   tm2                 String
+  created_at          DateTime @db.Date
   submittion_type     Json
+  attachment          String?
+}
+
+enum Role {
+  Admin
+  User
 }
