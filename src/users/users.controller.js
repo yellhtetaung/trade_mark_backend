@@ -9,14 +9,10 @@ exports.getAllHandler = async (req, res) => {
 
         if (!page && !pageSize) {
             const users = await prisma.user.findMany({
-                select: {
-                    username: true,
-                    email: true,
-                    phone_no: true,
-                    nrc: true,
-                    address: true,
-                    active: true,
-                    role: true,
+                where: {
+                    email: {
+                        not: 'admin@gmail.com',
+                    },
                 },
             });
 
@@ -31,6 +27,11 @@ exports.getAllHandler = async (req, res) => {
             prisma.user.findMany({
                 skip,
                 take: Number(pageSize),
+                where: {
+                    email: {
+                        not: 'admin@gmail.com',
+                    },
+                },
                 orderBy: {
                     [sortField]: Number(sortOrder) === 1 ? 'asc' : 'desc',
                 },
@@ -90,7 +91,7 @@ exports.createHandler = async (req, res) => {
             throw new Error('Content cannot be empty!');
         }
 
-        const { username, email, password, phoneNumber, nrc, address } = req.body;
+        const { username, email, password, phoneNumber, nrc, address, role } = req.body;
 
         if (!emailValidator.validate(email)) {
             throw new Error('Invalid email');
@@ -104,7 +105,7 @@ exports.createHandler = async (req, res) => {
 
         const hashPassword = bcrypt.hashSync(password, 10);
 
-        const user = await prisma.user.create({
+        await prisma.user.create({
             data: {
                 username,
                 email,
@@ -112,6 +113,7 @@ exports.createHandler = async (req, res) => {
                 phone_no: phoneNumber,
                 nrc,
                 address,
+                role,
             },
         });
 
