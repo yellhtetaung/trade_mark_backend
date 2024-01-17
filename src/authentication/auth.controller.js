@@ -1,51 +1,46 @@
-const prisma = require('../config/db.config');
+const mysql = require('../config/db.config');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-exports.login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
+exports.login = (req, res) => {
+    const { email, password } = req.body;
 
-        const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (email && password) {
+        mysql.query(`SELECT * FROM User WHERE email='${email}'`, (error, data) => {
+            console.log(error);
+            if (error) return res.status(500).json({ message: 'Something Wrong!' });
 
-        if (!existingUser) {
-            throw new Error('This email does not registered');
-        }
-
-        if (!existingUser.active) {
-            throw new Error('This user is inactive');
-        }
-
-        if (existingUser) {
-            const comparePassword = bcrypt.compareSync(password, existingUser.password);
-
-            if (!comparePassword) {
-                throw new Error('Incorrect password');
+            if (data.length === 0) {
+                return res.status(500).json({ message: 'This email does not registered' });
             }
 
-            const token = jwt.sign(existingUser, 'trademark', {
+            if (!data[0].active) {
+                return res.status(500).json({ message: 'This user is inactive' });
+            }
+
+            const comparePassword = bcrypt.compareSync(password, data[0].password);
+
+            if (!comparePassword) {
+                return res.status(500).json({ message: 'Incorrect password' });
+            }
+
+            const token = jwt.sign(data[0], 'trademark', {
                 expiresIn: 24 * 60 * 60 * 1000,
             });
 
-            res.status(200).json({ message: 'Login successful', token });
-        }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+            return res.status(200).json({ message: 'Login successful', token });
+        });
     }
 };
 
-exports.authorization = async (req, res) => {
-    try {
-        const token = req.headers.authorization;
-        jwt.verify(token, 'trademark', { complete: true }, (error, decoded) => {
-            if (error) {
-                throw new Error(error);
-            }
+exports.authorization = (req, res) => {
+    const token = req.headers.authorization;
+    jwt.verify(token, 'trademark', { complete: true }, (error, decoded) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ error: error.message });
+        }
 
-            res.status(200).json({ message: decoded.payload.role });
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: error.message });
-    }
+        return res.status(200).json({ message: decoded.payload.role });
+    });
 };

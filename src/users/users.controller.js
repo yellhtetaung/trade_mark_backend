@@ -1,177 +1,123 @@
-const prisma = require('../config/db.config.js');
+const mysql = require('../config/db.config.js');
 const emailValidator = require('email-validator');
 const bcrypt = require('bcrypt');
 
-exports.getAllHandler = async (req, res) => {
-    try {
-        const { page, pageSize, sortField, sortOrder } = req.query;
-        const skip = Number(page) * Number(pageSize);
+exports.getAllHandler = (req, res) => {
+    const { page, pageSize, sortField, sortOrder } = req.query;
+    const skip = Number(page) * Number(pageSize);
 
-        if (!page && !pageSize) {
-            const users = await prisma.user.findMany({
-                where: {
-                    email: {
-                        not: 'admin@gmail.com',
-                    },
-                },
-            });
+    if (!page && !pageSize) {
+        mysql.query(`SELECT * FROM user WHERE email!='admin@gmail.com'`, (error, data) => {
+            if (error) return res.status(500).json({ message: 'Something Wrong' });
 
-            if (!users) {
-                throw new Error('User not found');
+            if (data.length === 0) {
+                return res.status(500).json({ message: 'User not found' });
             }
 
-            return res.status(200).json({ data: users });
-        }
+            return res.status(200).json({ data: data });
+        });
+    } else {
+        mysql.query(`SELECT * FROM User WHERE email!='admin@gmail.com' ORDER BY ${sortField} ${Number(sortOrder) === 1 ? 'ASC' : 'DESC'} LIMIT ${skip}, ${Number(pageSize)}`, (error, users) => {
+            if (error) return res.status(500).json({ message: 'Something Wrong!' });
 
-        const [users, totalUsers] = await prisma.$transaction([
-            prisma.user.findMany({
-                skip,
-                take: Number(pageSize),
-                where: {
-                    email: {
-                        not: 'admin@gmail.com',
-                    },
-                },
-                orderBy: {
-                    [sortField]: Number(sortOrder) === 1 ? 'asc' : 'desc',
-                },
-            }),
-            prisma.user.count(),
-        ]);
+            mysql.query(`SELECT COUNT(*) AS totalUsers FROM User WHERE email!='admin@gmail.com'`, (error, data) => {
+                if (error) return res.status(500).json({ message: 'Something Wrong!' });
 
-        if (!users.length) {
-            throw new Error('Users not found');
-        }
-
-        res.status(200).json({ data: users, totalUsers });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+                return res.status(200).json({ data: users, totalUsers: data[0].totalUsers });
+            });
+        });
     }
 };
 
 exports.searchHandler = async (req, res) => {
-    try {
-        const { page, pageSize, filteredValue, searchField } = req.query;
-        const skip = Number(page) * Number(pageSize);
+    const { page, pageSize, filteredValue, searchField } = req.query;
+    const skip = Number(page) * Number(pageSize);
 
-        if (filteredValue !== 'null') {
-            const [user, totalUsers] = await prisma.$transaction([
-                prisma.user.findMany({
-                    skip,
-                    take: Number(pageSize),
-                    where: {
-                        [filteredValue]: {
-                            contains: searchField,
-                        },
-                    },
-                }),
-                prisma.user.count({
-                    where: {
-                        [filteredValue]: {
-                            contains: searchField,
-                        },
-                    },
-                }),
-            ]);
+    mysql.query(`SELECT * FROM User WHERE ${filteredValue} LIKE '${searchField}%' AND email!='admin@gmail.com' LIMIT ${skip}, ${Number(pageSize)}`, (error, user) => {
+        if (error) return res.status(500).json({ message: 'Something Wrong!' });
 
-            if (!user.length) {
-                throw new Error('User not found');
-            }
-
-            res.status(200).json({ data: user, totalUsers });
+        if (!user.length) {
+            return res.status(200).json({ message: 'User not found' });
         }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+
+        mysql.query(`SELECT COUNT(*) AS count FROM User WHERE ${filteredValue} LIKE '${searchField}%' AND email!='admin@gmail.com'`, (error, count) => {
+            if (error) return res.status(500).json({ message: 'Something Wrong!' });
+
+            return res.status(200).json({ data: user, totalUsers: count.count });
+        });
+    });
 };
 
-exports.createHandler = async (req, res) => {
-    try {
-        if (Object.keys(req.body).length === 0) {
-            throw new Error('Content cannot be empty!');
+exports.createHandler = (req, res) => {
+    if (Object.keys(req.body).length === 0) {
+        throw new Error('Content cannot be empty!');
+    }
+
+    const { username, email, password, phoneNumber, nrc, address, role } = req.body;
+
+    if (!emailValidator.validate(email)) {
+        return res.status(500).json({ message: 'Invalid email' });
+    }
+
+    mysql.query(`SELECT * FROM User WHERE email='${email}'`, (error, data) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ message: 'Something Wrong!' });
         }
 
-        const { username, email, password, phoneNumber, nrc, address, role } = req.body;
-
-        if (!emailValidator.validate(email)) {
-            throw new Error('Invalid email');
-        }
-
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-
-        if (existingUser) {
-            throw new Error('Email already exists');
+        if (data.length > 0) {
+            return res.status(500).json({ message: 'Email already existed.' });
         }
 
         const hashPassword = bcrypt.hashSync(password, 10);
 
-        await prisma.user.create({
-            data: {
-                username,
-                email,
-                password: hashPassword,
-                phone_no: phoneNumber,
-                nrc,
-                address,
-                role,
-            },
+        mysql.query('INSERT INTO User SET ?', { username, email, password: hashPassword, phone_no: phoneNumber, nrc, address, role }, error => {
+            if (error) {
+                console.log(error);
+                return res.status(500).json({ message: 'Something Wrong!' });
+            }
+            return res.status(201).json({ message: 'User created successfully' });
         });
-
-        res.status(201).json({ message: 'User created successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    });
 };
 
 exports.updateHandler = async (req, res) => {
-    try {
-        const id = req.params.id;
+    const id = req.params.id;
 
-        if (Object.keys(req.body).length === 0) {
-            throw new Error('Content cannot be empty!');
-        }
-
-        const { username, email, password, phone_no, nrc, address, active, role } = req.body;
-        const updateUser = {
-            username,
-            email,
-            password,
-            phone_no,
-            nrc,
-            address,
-            active,
-            role,
-        };
-
-        await prisma.user.update({
-            where: { id },
-            data: updateUser,
-        });
-
-        res.status(200).json({ message: 'User updated successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    if (Object.keys(req.body).length === 0) {
+        throw new Error('Content cannot be empty!');
     }
+
+    const { username, email, password, phone_no, nrc, address, active, role } = req.body;
+
+    mysql.query(`UPDATE User SET username='${username}', email='${email}', password='${password}', phone_no=${phone_no}, nrc='${nrc}', address='${address}', active=${active === 1 ? true : false}, role='${role}' WHERE id='${id}'`, error => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ message: 'Something Wrong!' });
+        }
+        return res.status(200).json({ message: 'User updated successfully' });
+    });
 };
 
 exports.deleteHandler = async (req, res) => {
-    try {
-        if (!req.params.id) {
-            throw new Error('Id is required');
-        }
-
-        const existingUser = await prisma.user.findUnique({
-            where: { id: req.params.id },
-        });
-
-        if (!existingUser) {
-            throw new Error('User not found');
-        }
-
-        await prisma.user.delete({ where: { id: existingUser.id } });
-
-        res.status(200).json({ message: 'User deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    if (!req.params.id) {
+        throw new Error('Id is required');
     }
+
+    mysql.query(`SELECT * FROM User WHERE id='${req.params.id}'`, (error, data) => {
+        if (error) {
+            console.log(error);
+            return res.status(200).json({ message: 'Something Wrong' });
+        }
+
+        if (data.length === 0) {
+            return res.status(500).json({ message: 'User not found' });
+        }
+
+        mysql.query(`DELETE FROM User WHERE id='${req.params.id}'`, error => {
+            if (error) return res.status(500).json({ message: 'Something Wrong!' });
+
+            return res.status(200).json({ message: 'User deleted successfully' });
+        });
+    });
 };
