@@ -7,7 +7,6 @@ exports.login = (req, res) => {
 
     if (email && password) {
         mysql.query(`SELECT * FROM User WHERE email='${email}'`, (error, data) => {
-            console.log(error);
             if (error) return res.status(500).json({ message: 'Something Wrong!' });
 
             if (data.length === 0) {
@@ -35,9 +34,9 @@ exports.login = (req, res) => {
 
 exports.authorization = (req, res) => {
     const token = req.headers.authorization;
+
     jwt.verify(token, 'trademark', { complete: true }, (error, decoded) => {
         if (error) {
-            console.log(error);
             return res.status(500).json({ error: error.message });
         }
 
